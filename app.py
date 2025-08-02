@@ -72,6 +72,21 @@ def post_zip_file(zip_file, endpoint):
     except Exception as e:
         return {"error": f"Unexpected error: {str(e)}"}
 
+def post_retrain():
+    try:
+        # Send POST request to retrain endpoint (no data needed)
+        res = requests.post(f"{BASE_URL}/retrain/")
+        
+        # Check if we got a valid response
+        if res.status_code == 200:
+            return res.json()
+        else:
+            return {"error": f"HTTP {res.status_code}: {res.text[:200]}"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Connection error: {str(e)}"}
+    except Exception as e:
+        return {"error": f"Unexpected error: {str(e)}"}
+
 # ========== SIDEBAR ==========
 st.sidebar.title("🔍 Navigation")
 view = st.sidebar.radio("Go to", ["📊 Dashboard", "📷 Predict", "📁 Upload + Retrain"])
@@ -287,9 +302,13 @@ else:
 
     if st.button("♻️ Retrain Model"):
         with st.spinner("Retraining in progress..."):
-            res = fetch("retrain")
-            st.success("Retraining complete.")
-            st.json(res)
+            res = post_retrain()
+            
+            if res.get("error"):
+                st.error(f"❌ Retraining failed: {res['error']}")
+            else:
+                st.success("✅ Model retrained successfully!")
+                st.json(res)
 
     # Training data status
     st.divider()
