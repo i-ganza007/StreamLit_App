@@ -55,6 +55,23 @@ def post_file(file, endpoint):
     except Exception as e:
         return {"error": f"Unexpected error: {str(e)}"}
 
+def post_zip_file(zip_file, endpoint):
+    try:
+        # Reset file pointer to beginning
+        zip_file.seek(0)
+        # Use 'zip_file' as the parameter name for the upload-zip endpoint
+        res = requests.post(f"{BASE_URL}/{endpoint}/", files={"zip_file": zip_file})
+        
+        # Check if we got a valid response
+        if res.status_code == 200:
+            return res.json()
+        else:
+            return {"error": f"HTTP {res.status_code}: {res.text[:200]}"}
+    except requests.exceptions.RequestException as e:
+        return {"error": f"Connection error: {str(e)}"}
+    except Exception as e:
+        return {"error": f"Unexpected error: {str(e)}"}
+
 # ========== SIDEBAR ==========
 st.sidebar.title("🔍 Navigation")
 view = st.sidebar.radio("Go to", ["📊 Dashboard", "📷 Predict", "📁 Upload + Retrain"])
@@ -258,8 +275,13 @@ else:
     zip_file = st.file_uploader("Upload a ZIP file of new training data", type="zip")
     if zip_file and st.button("⬆️ Upload ZIP"):
         with st.spinner("Uploading and processing data..."):
-            res = post_file(zip_file, "upload-zip")
-            st.json(res)
+            res = post_zip_file(zip_file, "upload-zip")
+            
+            if res.get("error"):
+                st.error(f"❌ Upload failed: {res['error']}")
+            else:
+                st.success("✅ ZIP file uploaded successfully!")
+                st.json(res)
 
     st.divider()
 
